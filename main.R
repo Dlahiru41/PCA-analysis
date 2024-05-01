@@ -80,12 +80,22 @@ print("NBclust Results:")
 print(nb_clusters_pca$Best.nc)
 
 # Apply the Elbow method to the PCA-based dataset
-wcss_pca <- numeric(10)
-for (i in 1:10) {
-  kmeans_model_pca <- kmeans(transformed_data, centers = i)
-  wcss_pca[i] <- kmeans_model_pca$tot.withinss
+# Initialize variables
+wcss_diff <- diff(wcss_pca)
+curvature <- numeric(length(wcss_diff) - 1)
+
+# Calculate curvature
+for (i in 1:(length(wcss_diff) - 1)) {
+  curvature[i] <- (wcss_diff[i] - wcss_diff[i + 1]) / wcss_diff[i]
 }
+
+# Find the index of the maximum curvature
+elbow_index <- which.max(curvature)
+
+# Plot the Elbow method with the marked elbow point
 plot(1:10, wcss_pca, type = "b", xlab = "Number of Clusters", ylab = "Within-Cluster Sum of Squares (WCSS)", main = "Elbow Method for PCA-based Dataset")
+points(elbow_index + 1, wcss_pca[elbow_index + 1], col = "red", pch = 19)
+
 
 # Apply Gap statistics to the PCA-based dataset
 gap_stat_pca <- clusGap(transformed_data, FUN = kmeans, nstart = 25, K.max = 10, B = 50)
@@ -101,3 +111,86 @@ silhouette_score <- function(k){
 k <- 2:10
 avg_sil <- sapply(k, silhouette_score)
 plot(k, type='b', avg_sil, xlab='Number of clusters', ylab='Average Silhouette Scores', frame=FALSE)
+
+
+optimal_k <- 3
+# Perform k-means clustering with the most favored k
+kmeans_model_pca <- kmeans(transformed_data, centers = optimal_k)
+
+# Print kmeans model output
+print("K-means Model Output:")
+print(kmeans_model_pca)
+
+# Calculate between-cluster sum of squares (BSS)
+bss_pca <- sum(kmeans_model_pca$betweenss)
+
+# Calculate within-cluster sum of squares (WSS)
+wss_pca <- sum(kmeans_model_pca$withinss)
+
+# Calculate total sum of squares (TSS)
+tss_pca <- wss_pca + bss_pca
+
+# Calculate ratio of BSS over TSS
+bss_tss_ratio_pca <- bss_pca / tss_pca
+
+# Print BSS, WSS, and BSS/TSS ratio
+cat("Between-Cluster Sum of Squares (BSS) for PCA-based Dataset:", bss_pca, "\n")
+cat("Within-Cluster Sum of Squares (WSS) for PCA-based Dataset:", wss_pca, "\n")
+cat("Total Sum of Squares (TSS) for PCA-based Dataset:", tss_pca, "\n")
+cat("Ratio of BSS over TSS for PCA-based Dataset:", bss_tss_ratio_pca, "\n")
+
+# Print centers
+cat("Cluster Centers for PCA-based Dataset:\n")
+print(kmeans_model_pca$centers)
+
+# Print clustered results
+cat("Clustered Results for PCA-based Dataset:\n")
+table(kmeans_model_pca$cluster)
+
+# Plot clusters
+plot(transformed_data[,1], transformed_data[,2], col = kmeans_model_pca$cluster,
+     pch = 19, main = "Cluster Plot for PCA-based Dataset",
+     xlab = "Principal Component 1", ylab = "Principal Component 2")
+
+# Add cluster centers to the plot
+points(kmeans_model_pca$centers[,1], kmeans_model_pca$centers[,2], col = 1:length(kmeans_model_pca$centers),
+       pch = 8, cex = 2)
+
+
+silhouette_score <- function(k){
+  km <- kmeans(transformed_data, centers = k, nstart=25)
+  ss <- silhouette(km$cluster, dist(transformed_data))
+  mean(ss[, 3])
+}
+
+k <- 2:10
+avg_sil <- sapply(k, silhouette_score)
+
+# Plot silhouette plot
+plot(k, avg_sil, type='b', xlab='Number of clusters', ylab='Average Silhouette Scores', frame=FALSE)
+
+# Calculate and print the maximum silhouette score and corresponding k
+max_sil_score <- max(avg_sil)
+optimal_k_sil <- k[which.max(avg_sil)]
+cat("Maximum Average Silhouette Score:", max_sil_score, "\n")
+cat("Optimal number of clusters based on silhouette method:", optimal_k_sil, "\n")
+
+
+
+library(fpc)
+
+# Perform k-means clustering with the most favored k
+kmeans_model_pca <- kmeans(transformed_data, centers = optimal_k)
+
+# Calculate the Calinski-Harabasz Index
+ch_index <- cluster.stats(transformed_data, kmeans_model_pca$cluster)$ch
+
+# Print the Calinski-Harabasz Index
+cat("Calinski-Harabasz Index:", ch_index, "\n")
+
+
+km <- kmeans(transformed_data,2)
+ch_index <- round(calinhara(transformed_data,km$cluster),digits=2)
+
+# Print the Calinski-Harabasz Index
+cat("Calinski-Harabasz Index:", ch_index, "\n")
