@@ -74,3 +74,30 @@ print("Transformed Dataset with Principal Components:")
 print(transformed_data)
 
 
+# Apply NBclust to the PCA-based dataset
+nb_clusters_pca <- NbClust(transformed_data, min.nc = 2, max.nc = 10, method = "kmeans")
+print("NBclust Results:")
+print(nb_clusters_pca$Best.nc)
+
+# Apply the Elbow method to the PCA-based dataset
+wcss_pca <- numeric(10)
+for (i in 1:10) {
+  kmeans_model_pca <- kmeans(transformed_data, centers = i)
+  wcss_pca[i] <- kmeans_model_pca$tot.withinss
+}
+plot(1:10, wcss_pca, type = "b", xlab = "Number of Clusters", ylab = "Within-Cluster Sum of Squares (WCSS)", main = "Elbow Method for PCA-based Dataset")
+
+# Apply Gap statistics to the PCA-based dataset
+gap_stat_pca <- clusGap(transformed_data, FUN = kmeans, nstart = 25, K.max = 10, B = 50)
+print("Gap Statistics Results:")
+print(gap_stat_pca$Tab[,"gap"])
+
+# Apply the Silhouette method to the PCA-based dataset
+silhouette_score <- function(k){
+  km <- kmeans(transformed_data, centers = k, nstart=25)
+  ss <- silhouette(km$cluster, dist(transformed_data))
+  mean(ss[, 3])
+}
+k <- 2:10
+avg_sil <- sapply(k, silhouette_score)
+plot(k, type='b', avg_sil, xlab='Number of clusters', ylab='Average Silhouette Scores', frame=FALSE)
