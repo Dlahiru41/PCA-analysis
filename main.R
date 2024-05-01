@@ -71,7 +71,7 @@ transformed_data <- as.data.frame(selected_components)
 
 # Print the transformed dataset
 print("Transformed Dataset with Principal Components:")
-print(transformed_data)
+# print(transformed_data)
 
 
 # Apply NBclust to the PCA-based dataset
@@ -80,7 +80,18 @@ print("NBclust Results:")
 print(nb_clusters_pca$Best.nc)
 
 # Apply the Elbow method to the PCA-based dataset
+wcss_pca <- numeric(10)
+for (i in 1:10) {
+  kmeans_model_pca <- kmeans(transformed_data, centers = i)
+  wcss_pca[i] <- kmeans_model_pca$tot.withinss
+}
+plot(1:10, wcss_pca, type = "b", xlab = "Number of Clusters", ylab = "Within-Cluster Sum of Squares (WCSS)", main = "Elbow Method for PCA-based Dataset")
+points(elbow_index + 1, wcss_pca[elbow_index + 1], col = "red", pch = 19)
+
+
+# Apply the Elbow method to the PCA-based dataset
 # Initialize variables
+wcss_pca <- numeric(10)
 wcss_diff <- diff(wcss_pca)
 curvature <- numeric(length(wcss_diff) - 1)
 
